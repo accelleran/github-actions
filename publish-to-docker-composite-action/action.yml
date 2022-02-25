@@ -1,0 +1,43 @@
+name: "Publish to Docker"
+description: "Build a container and pushes it to DockerHub"
+
+
+inputs:
+  docker_username:
+    description: "User name for image repository"
+    required: true
+  docker_token:
+    description: "Password for image repository"
+    required: true
+  github_username:
+    description: "User name for GitHub"
+    required: true
+  github_token:
+    description: "Token for GitHub"
+    required: true
+  image_name:
+    description: "Name of the image to push"
+    required: true
+  version:
+    description: "Tag for the image"
+    required: true
+    
+runs:
+  using: "composite"
+  steps:
+  - name: Set up QEMU
+    uses: docker/setup-qemu-action@v1
+  - name: install buildx
+    id: buildx
+    uses: docker/setup-buildx-action@v1
+  - name: login to docker hub
+    shell: bash
+    run: echo "${{inputs.docker_token}}"" | docker login -u "${{inputs.docker_username}}"" --password-stdin
+  - name: build the image
+    shell: bash
+    run: |
+      docker buildx build --build-arg username=${{inputs.github_username}} --build-arg token=${{inputs.github_token}} --push \
+        --tag ${{inputs.image_name}}:${{inputs.version}} \
+        --file Dockerfile \
+        --platform linux/amd64,linux/arm64 . 
+     

@@ -1,0 +1,24 @@
+name: "Run Python Unit Tests"
+description: "Run the Python Unit tests"
+
+inputs:
+  unittest_file:
+    description: "Name of the unit test file to run"
+    required: true
+    
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.9"
+    - name: Install dependencies
+      shell: bash
+      run: |
+        python3 -m pip install --upgrade pip
+        pip3 install pytz
+    - name: Run unit tests
+      shell: bash
+      run: python3 ${{inputs.unittest_file}}
+      
