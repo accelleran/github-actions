@@ -25,8 +25,8 @@ inputs:
 runs:
   using: "composite"
   steps:
-  - name: Set up QEMU
-    uses: docker/setup-qemu-action@v1
+  #- name: Set up QEMU
+  #  uses: docker/setup-qemu-action@v1
   - name: install buildx
     id: buildx
     uses: docker/setup-buildx-action@v1
@@ -39,5 +39,5 @@ runs:
       docker buildx build --build-arg username=${{inputs.github_username}} --build-arg token=${{inputs.github_token}} --push \
         --tag ${{inputs.image_name}}:${{inputs.version}} \
         --file Dockerfile \
-        --platform linux/amd64,linux/arm64 . 
+        --platform linux/amd64 . 
      
