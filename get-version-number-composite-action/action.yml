@@ -1,0 +1,22 @@
+name: "Generate Version Number"
+description: "Generates a Version Number for the Docker Image"
+
+
+outputs:
+  version-number:
+    description: "Version number for the image"
+    value: ${{ steps.version-number-generator.outputs.version-number-id }} 
+    
+runs:
+  using: "composite"
+  steps:
+    - id: version-number-generator
+      shell: bash
+      run: |
+        if [[ "$GITHUB_REF" =~ ^refs/tags/ ]]; then
+          echo ::set-output name=version-number-id::${GITHUB_REF/refs\/tags\//}
+        else
+          VERSION="branch_${GITHUB_REF/refs\/heads\//}_${GITHUB_SHA::8}"
+          echo ::set-output version-number-id=VERSION::$VERSION
+        fi
+     
