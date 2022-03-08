@@ -13,7 +13,8 @@ runs:
       run: |
         python3 -m pip install --upgrade pip
         pip3 install pytz
+        pip3 install pytest
     - name: Run unit tests
       shell: bash
-      run: python3 -m unittest discover -p "*_tests.py"
+      run: pytest
       
