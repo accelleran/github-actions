@@ -13,8 +13,8 @@ runs:
       run: |
         python3 -m pip install --upgrade pip
         pip3 install pytest
-	if [ -f "tests/requirements.txt" ]; then
-        	pip3 install -r tests/requirements.txt
+	      if [ -f "tests/requirements.txt" ]; then
+          pip3 install -r tests/requirements.txt
         fi
     - name: Run unit tests
       shell: bash
