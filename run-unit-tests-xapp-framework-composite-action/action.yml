@@ -1,0 +1,22 @@
+name: "Run Python Unit Tests"
+description: "Run the Python Unit tests"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.9"
+    - name: Install dependencies
+      shell: bash
+      run: |
+        python3 -m pip install --upgrade pip
+        pip3 install pytest
+        if [ -f "xapp_core/test/requirements.txt" ]; then
+          pip3 install -r xapp_core/test/requirements.txt
+        fi
+    - name: Run unit tests
+      shell: bash
+      run: pytest
+      
