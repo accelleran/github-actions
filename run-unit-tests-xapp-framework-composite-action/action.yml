@@ -12,7 +12,6 @@ runs:
       shell: bash
       run: |
         python3 -m pip install --upgrade pip
-        pip3 install pytest
         if [ -f "xapp_core/test/requirements.txt" ]; then
           pip3 install -r xapp_core/test/requirements.txt
         fi
