@@ -12,6 +12,9 @@ runs:
       shell: bash
       run: |
         python3 -m pip install --upgrade pip
+        if [ -f "xapp_core/requirements.txt" ]; then
+          pip3 install -r xapp_core/requirements.txt
+        fi
         if [ -f "xapp_core/test/requirements.txt" ]; then
           pip3 install -r xapp_core/test/requirements.txt
         fi
