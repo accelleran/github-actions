@@ -27,6 +27,7 @@ runs:
 
         if [ -f "requirements.txt" ]; then
           export USERNAME=${{inputs.github_username}} && export TOKEN=${{inputs.github_token}} && export VERSION=${{inputs.framework_version}} && pip3 install -r requirements.txt
+        fi
 
         if [ -f "tests/requirements.txt" ]; then
           pip3 install -r tests/requirements.txt
