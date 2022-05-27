@@ -1,6 +1,17 @@
 name: "Run Python Unit Tests"
 description: "Run the Python Unit tests"
 
+inputs:
+  github_username:
+    description: "User name for GitHub"
+    required: true
+  github_token:
+    description: "Token for GitHub"
+    required: true
+  framework_version:
+    description: "Version of XApp Framework"
+    required: true
+
 runs:
   using: "composite"
   steps:
@@ -12,7 +23,11 @@ runs:
       shell: bash
       run: |
         python3 -m pip install --upgrade pip
-        pip3 install pytest
+        pip3 install pytest==7.1.0
+
+        if [ -f "requirements.txt" ]; then
+          export USERNAME=${{inputs.github_username}} && export TOKEN=${{inputs.github_token}} && export VERSION=${{inputs.framework_version}} && pip3 install -r requirements.txt
+
         if [ -f "tests/requirements.txt" ]; then
           pip3 install -r tests/requirements.txt
         fi
