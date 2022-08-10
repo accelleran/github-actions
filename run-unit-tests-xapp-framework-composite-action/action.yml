@@ -3,9 +3,6 @@ description: "Run the Python Unit tests"
 
 runs:
   using: "composite"
-  strategy:
-    matrix:
-      module: ["xapp_core", "example"]
   steps:
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -15,17 +12,36 @@ runs:
       shell: bash
       run: |
         python3 -m pip install --upgrade pip
-    - name: Test ${{ matrix.module }}
-        cd ${{ matrix.version }}
+    - name: Test xapp_core
+        cd xapp_core
         if [ -f "requirements.txt" ]; then
           pip3 install -r requirements.txt
         fi
         if [ -f "tests/requirements.txt" ]; then
           pip3 install -r tests/requirements.txt
         fi
-    - name: Run unit tests
+    - name: Run unit tests for xapp core
       shell: bash
       run: |
-        cd ${{ matrix.version }}
+        cd xapp_core
         pytest
+    - name: Test xapp example
+        cd example
+        if [ -f "requirements.txt" ]; then
+          pip3 install -r requirements.txt
+        fi
+        if [ -f "tests/requirements.txt" ]; then
+          pip3 install -r tests/requirements.txt
+        fi
+    - name: Run unit tests for xapp core
+      shell: bash
+      run: |
+        cd xapp_core
+        pytest
+    - name: Run unit tests for xapp example
+      shell: bash
+      run: |
+        cd example
+        pytest
+
 
