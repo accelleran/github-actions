@@ -12,10 +12,13 @@ runs:
       shell: bash
       run: |
         python3 -m pip install --upgrade pip
+        python3 -m pip install --user virtualenv
     - name: Test xapp core
       shell: bash
       run: |
-        cd xapp_core
+        cd xapp_core && mkdir venv_test
+        virtualenv -p /usr/bin/python3.9 venv_test
+        source venv_test/bin/activate
         if [ -f "requirements.txt" ]; then
           pip3 install -r requirements.txt
         fi
@@ -23,10 +26,13 @@ runs:
           pip3 install -r tests/requirements.txt
         fi
         pytest
+        deactivate
     - name: Test xapp example
       shell: bash
       run: |
-        cd example
+        cd example && mkdir venv_test
+        virtualenv -p /usr/bin/python3.9 venv_test
+        source venv_test/bin/activate
         if [ -f "requirements.txt" ]; then
           pip3 install -r requirements.txt
         fi
@@ -34,5 +40,5 @@ runs:
           pip3 install -r tests/requirements.txt
         fi
         pytest
-
+        deactivate
 
