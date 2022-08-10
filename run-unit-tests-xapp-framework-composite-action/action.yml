@@ -16,6 +16,9 @@ runs:
     - name: Set PATH for virtualenv
       shell: bash
       run: echo "${HOME}/.local/bin" >> $GITHUB_PATH
+    - name: debug
+      shell: bash
+      run: whereis python3.9
     - name: Test xapp core
       shell: bash
       run: |
