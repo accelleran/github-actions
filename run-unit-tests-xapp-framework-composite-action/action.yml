@@ -12,7 +12,7 @@ runs:
       shell: bash
       run: |
         python3 -m pip install --upgrade pip
-    - name: Test xapp_core
+    - name: Test xapp core
       shell: bash
       run: |
         cd xapp_core
@@ -22,10 +22,6 @@ runs:
         if [ -f "tests/requirements.txt" ]; then
           pip3 install -r tests/requirements.txt
         fi
-    - name: Run unit tests for xapp core
-      shell: bash
-      run: |
-        cd xapp_core
         pytest
     - name: Test xapp example
       shell: bash
@@ -37,15 +33,6 @@ runs:
         if [ -f "tests/requirements.txt" ]; then
           pip3 install -r tests/requirements.txt
         fi
-    - name: Run unit tests for xapp core
-      shell: bash
-      run: |
-        cd xapp_core
-        pytest
-    - name: Run unit tests for xapp example
-      shell: bash
-      run: |
-        cd example
         pytest
 
 
