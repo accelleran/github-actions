@@ -36,9 +36,6 @@ runs:
         cd example && mkdir venv_test
         virtualenv -p python3.9 venv_test
         source venv_test/bin/activate
-        if [ -f "requirements.txt" ]; then
-          pip3 install -r requirements.txt
-        fi
         if [ -f "tests/requirements.txt" ]; then
           pip3 install -r tests/requirements.txt
         fi
