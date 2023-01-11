@@ -10,7 +10,7 @@ inputs:
     required: true
   framework_version:
     description: "Version of XApp Framework"
-    required: true
+    required: false
 
 runs:
   using: "composite"
