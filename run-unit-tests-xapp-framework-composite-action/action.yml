@@ -19,7 +19,7 @@ runs:
     - name: Test xapp core
       shell: bash
       run: |
-        cd xapp_core && mkdir venv_test
+        cd xapp_sdk && mkdir venv_test
         virtualenv -p python3.9 venv_test
         source venv_test/bin/activate
         if [ -f "requirements.txt" ]; then
@@ -33,7 +33,7 @@ runs:
     - name: Test xapp example
       shell: bash
       run: |
-        cd example && mkdir venv_test
+        mkdir venv_test
         virtualenv -p python3.9 venv_test
         source venv_test/bin/activate
         if [ -f "requirements.txt" ]; then
