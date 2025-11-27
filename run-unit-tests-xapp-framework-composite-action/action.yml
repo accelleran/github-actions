@@ -46,6 +46,6 @@ runs:
         if [ -f "tests/requirements.txt" ]; then
           pip3 install -r tests/requirements.txt
         fi
-        pytest
+        pytest tests/
         deactivate
 
