@@ -22,6 +22,7 @@ runs:
         cd xapp_sdk && mkdir venv_test
         virtualenv -p python3.9 venv_test
         source venv_test/bin/activate
+        pip3 install -e .
         if [ -f "requirements.txt" ]; then
           pip3 install -r requirements.txt
         fi
@@ -36,6 +37,9 @@ runs:
         mkdir venv_test
         virtualenv -p python3.9 venv_test
         source venv_test/bin/activate
+        if [ -d "xapp_sdk" ]; then
+          pip3 install -e xapp_sdk
+        fi
         if [ -f "requirements.txt" ]; then
           pip3 install -r requirements.txt
         fi
