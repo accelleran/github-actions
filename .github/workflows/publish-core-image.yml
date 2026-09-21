@@ -49,6 +49,7 @@ jobs:
   publish:
     if: >-
       github.event_name == 'push' &&
+      github.event.deleted != true &&
       (github.ref_type == 'tag' ||
        github.ref == 'refs/heads/master' ||
        github.ref == 'refs/heads/main' ||
