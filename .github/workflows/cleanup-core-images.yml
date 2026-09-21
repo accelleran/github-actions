@@ -1,0 +1,110 @@
+name: Remove expired core-network images from GHCR
+
+on:
+  workflow_call:
+    inputs:
+      package-name:
+        description: GHCR container package name
+        required: true
+        type: string
+      retention-days:
+        description: Number of 24-hour periods to retain images
+        required: false
+        default: 30
+        type: number
+      minimum-versions-to-keep:
+        description: Safety floor for dated image versions
+        required: false
+        default: 0
+        type: number
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    concurrency:
+      group: ghcr-cleanup-${{ github.repository }}-${{ inputs.package-name }}
+      cancel-in-progress: false
+    steps:
+      - name: Delete expired dated image versions
+        uses: actions/github-script@v7
+        env:
+          PACKAGE_NAME: ${{ inputs.package-name }}
+          RETENTION_DAYS: ${{ inputs.retention-days }}
+          MINIMUM_TO_KEEP: ${{ inputs.minimum-versions-to-keep }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const packageName = process.env.PACKAGE_NAME;
+            const retentionDays = Number(process.env.RETENTION_DAYS);
+            const minimumToKeep = Number(process.env.MINIMUM_TO_KEEP);
+            const datedTag = /^\d{8}-\d{6}-[0-9a-f]{12}$/;
+            const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
+
+            if (!Number.isInteger(retentionDays) || retentionDays < 1) {
+              throw new Error(`Invalid retention-days: ${process.env.RETENTION_DAYS}`);
+            }
+            if (!Number.isInteger(minimumToKeep) || minimumToKeep < 0) {
+              throw new Error(`Invalid minimum-versions-to-keep: ${process.env.MINIMUM_TO_KEEP}`);
+            }
+
+            let versions;
+            try {
+              versions = await github.paginate(
+                github.rest.packages.getAllPackageVersionsForPackageOwnedByOrg,
+                {
+                  org: owner,
+                  package_type: "container",
+                  package_name: packageName,
+                  per_page: 100,
+                },
+              );
+            } catch (error) {
+              if (error.status === 404) {
+                core.info(`Package ${owner}/${packageName} does not exist yet`);
+                return;
+              }
+              throw error;
+            }
+
+            const managed = versions
+              .filter((version) => {
+                const tags = version.metadata?.container?.tags ?? [];
+                return tags.length > 0 && tags.every((tag) => datedTag.test(tag));
+              })
+              .sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at));
+
+            const protectedIds = new Set(
+              managed.slice(0, minimumToKeep).map((version) => version.id),
+            );
+            const expired = managed.filter(
+              (version) =>
+                !protectedIds.has(version.id) &&
+                Date.parse(version.created_at) < cutoff,
+            );
+
+            for (const version of expired) {
+              const tags = version.metadata.container.tags.join(", ");
+              core.info(`Deleting ${packageName} version ${version.id} (${tags})`);
+              await github.rest.packages.deletePackageVersionForOrg({
+                org: owner,
+                package_type: "container",
+                package_name: packageName,
+                package_version_id: version.id,
+              });
+            }
+
+            core.summary
+              .addHeading("GHCR retention")
+              .addTable([
+                [{data: "Package", header: true}, `${owner}/${packageName}`],
+                [{data: "Retention", header: true}, `${retentionDays} days`],
+                [{data: "Managed versions", header: true}, String(managed.length)],
+                [{data: "Deleted versions", header: true}, String(expired.length)],
+              ]);
+            await core.summary.write();
