@@ -1,0 +1,155 @@
+name: Publish core-network image to GHCR
+
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        description: GHCR package name, without registry or owner
+        required: true
+        type: string
+      context:
+        description: Docker build context
+        required: false
+        default: .
+        type: string
+      dockerfile:
+        description: Dockerfile path
+        required: true
+        type: string
+      target:
+        description: Optional Docker build target
+        required: false
+        default: ""
+        type: string
+      build-args:
+        description: Newline-delimited Docker build arguments
+        required: false
+        default: ""
+        type: string
+      initialize-submodules:
+        description: Initialize private core-network submodules
+        required: false
+        default: false
+        type: boolean
+      timeout-minutes:
+        description: Build timeout
+        required: false
+        default: 90
+        type: number
+    secrets:
+      CN5G_READ_TOKEN:
+        description: Token with read access to private core-network repositories
+        required: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    if: >-
+      github.event_name == 'push' &&
+      github.event.deleted != true &&
+      (github.ref_type == 'tag' ||
+       github.ref == 'refs/heads/master' ||
+       github.ref == 'refs/heads/main' ||
+       github.ref == 'refs/heads/fcdevelop')
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Configure private submodule access
+        if: inputs.initialize-submodules
+        env:
+          READ_TOKEN: ${{ secrets.CN5G_READ_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${READ_TOKEN}" ]]; then
+            echo "CN5G_READ_TOKEN is required for private core-network submodules" >&2
+            exit 1
+          fi
+
+          auth_root="https://x-access-token:${READ_TOKEN}@github.com/accelleran"
+          add_rewrite() {
+            git config --global --add "url.${auth_root}/$1.insteadOf" "$2"
+          }
+
+          add_rewrite cn5g-common-src https://github.com/accelleran/cn5g-common-src
+          add_rewrite cn5g-common-src https://gitlab.com/firecell/r-d/oai-5gc-nf/cn5g-common-src
+          add_rewrite cn5g-common-src https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-common-src
+          add_rewrite fcaps-common-src https://github.com/accelleran/fcaps-common-src
+          add_rewrite fcaps-common-src https://gitlab.com/firecell/r-d/oai-5gc-nf/fcaps-common-src
+          add_rewrite cn5g-common-build https://github.com/accelleran/cn5g-common-build
+          add_rewrite cn5g-common-build https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-common-build
+          add_rewrite cn5g-common-ci https://github.com/accelleran/cn5g-common-ci
+          add_rewrite cn5g-common-ci https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-common-ci
+          add_rewrite ogscrypt https://gitlab.com/firecell/r-d/oai-5gc-nf/ogscrypt
+
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+      - name: Normalize GHCR image name
+        id: name
+        env:
+          REQUESTED_IMAGE: ${{ inputs.image-name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          image="${REQUESTED_IMAGE,,}"
+          if [[ ! "${image}" =~ ^[a-z0-9][a-z0-9._-]*$ ]]; then
+            echo "Invalid GHCR image name: ${image}" >&2
+            exit 1
+          fi
+          echo "images=ghcr.io/${owner}/${image}" >> "${GITHUB_OUTPUT}"
+
+      - name: Compute immutable image reference
+        id: image
+        uses: docker/metadata-action@v6
+        env:
+          DOCKER_METADATA_SHORT_SHA_LENGTH: 12
+        with:
+          images: ${{ steps.name.outputs.images }}
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value={{date 'YYYYMMDD-HHmmss'}}-{{sha}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
+          target: ${{ inputs.target }}
+          push: true
+          tags: ${{ steps.image.outputs.tags }}
+          labels: ${{ steps.image.outputs.labels }}
+          build-args: ${{ inputs.build-args }}
+          provenance: false
+          sbom: false
+          cache-from: type=gha,scope=${{ inputs.image-name }}
+          cache-to: type=gha,scope=${{ inputs.image-name }},mode=max
+
+      - name: Publish summary
+        env:
+          IMAGE_TAGS: ${{ steps.image.outputs.tags }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "Published:"
+            printf '%s\n' "${IMAGE_TAGS}" | sed 's/^/- /'
+          } >> "${GITHUB_STEP_SUMMARY}"
