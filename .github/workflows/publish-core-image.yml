@@ -79,19 +79,6 @@ jobs:
           git config --global --add "url.${auth_root}/.insteadOf" \
             "https://github.com/accelleran/"
 
-          # Legacy GitLab submodule URLs still in .gitmodules, redirected to the
-          # accelleran mirrors.
-          add_rewrite() {
-            git config --global --add "url.${auth_root}/$1.insteadOf" "$2"
-          }
-
-          add_rewrite cn5g-common-src https://gitlab.com/firecell/r-d/oai-5gc-nf/cn5g-common-src
-          add_rewrite cn5g-common-src https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-common-src
-          add_rewrite fcaps-common-src https://gitlab.com/firecell/r-d/oai-5gc-nf/fcaps-common-src
-          add_rewrite cn5g-common-build https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-common-build
-          add_rewrite cn5g-common-ci https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-common-ci
-          add_rewrite ogscrypt https://gitlab.com/firecell/r-d/oai-5gc-nf/ogscrypt
-
           git submodule sync --recursive
           git submodule update --init --recursive
 
