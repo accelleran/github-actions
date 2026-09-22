@@ -52,8 +52,7 @@ jobs:
       github.event.deleted != true &&
       (github.ref_type == 'tag' ||
        github.ref == 'refs/heads/master' ||
-       github.ref == 'refs/heads/main' ||
-       github.ref == 'refs/heads/fcdevelop')
+       github.ref == 'refs/heads/main')
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.timeout-minutes }}
     steps:

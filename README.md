@@ -11,8 +11,8 @@ ghcr.io/accelleran/<package>:YYYYMMDD-HHMMSS-<12-character-commit-sha>
 ```
 
 Callers must trigger it only for tag pushes or pushes to their relevant
-`master`, `main`, or `fcdevelop` branch. Pull requests and feature-branch
-pushes must remain build-only.
+`master` or `main` branch. Pull requests and feature-branch pushes must
+remain build-only.
 
 `cleanup-core-images.yml` deletes versions whose only tags match that format
 once their GitHub package creation time is more than 30 days old. Call it
