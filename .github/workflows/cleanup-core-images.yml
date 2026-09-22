@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   cleanup:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     concurrency:
       group: ghcr-cleanup-${{ github.repository }}-${{ inputs.package-name }}
@@ -40,7 +40,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const owner = context.repo.owner;
-            const packageName = process.env.PACKAGE_NAME;
+            const packageName = String(process.env.PACKAGE_NAME || "").toLowerCase();
+            if (!/^[a-z0-9][a-z0-9._-]*$/.test(packageName)) {
+              throw new Error(`Invalid GHCR package name: ${process.env.PACKAGE_NAME}`);
+            }
             const retentionDays = Number(process.env.RETENTION_DAYS);
             const minimumToKeep = Number(process.env.MINIMUM_TO_KEEP);
             const datedTag = /^\d{8}-\d{6}-[0-9a-f]{12}$/;
@@ -66,8 +69,12 @@ jobs:
               );
             } catch (error) {
               if (error.status === 404) {
-                core.info(`Package ${owner}/${packageName} does not exist yet`);
-                return;
+                throw new Error(
+                  `Cannot list GHCR package ${owner}/${packageName} (HTTP 404). ` +
+                    "GitHub also returns 404 when the package is missing, the name does not match the published image, " +
+                    "or GITHUB_TOKEN cannot see an unlinked/unauthorized org package. " +
+                    "Link the package to this repository and confirm packages: write before retrying.",
+                );
               }
               throw error;
             }

@@ -28,6 +28,9 @@ Caller repositories require:
   Actions settings.
 - The generated GHCR package linked to its source repository with Actions
   write/admin access so its `GITHUB_TOKEN` can delete expired versions.
+  Cleanup fails on Packages API `404` rather than treating it as an empty
+  package; a missing, misspelled, or unlinked package must not look like a
+  successful retention run.
 
 The cleanup workflow deliberately ignores untagged versions and versions with
 non-managed tags. Publishing disables BuildKit provenance and SBOM manifests

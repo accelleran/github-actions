@@ -54,7 +54,7 @@ jobs:
        github.ref == 'refs/heads/master' ||
        github.ref == 'refs/heads/main' ||
        github.ref == 'refs/heads/fcdevelop')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.timeout-minutes }}
     steps:
       - name: Check out source
@@ -91,8 +91,8 @@ jobs:
           git submodule sync --recursive
           git submodule update --init --recursive
 
-      - name: Compute immutable image reference
-        id: image
+      - name: Normalize GHCR image name
+        id: name
         env:
           REQUESTED_IMAGE: ${{ inputs.image-name }}
         shell: bash
@@ -104,9 +104,19 @@ jobs:
             echo "Invalid GHCR image name: ${image}" >&2
             exit 1
           fi
-          tag="$(date -u +%Y%m%d-%H%M%S)-${GITHUB_SHA:0:12}"
-          echo "reference=ghcr.io/${owner}/${image}:${tag}" >> "${GITHUB_OUTPUT}"
-          echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "${GITHUB_OUTPUT}"
+          echo "images=ghcr.io/${owner}/${image}" >> "${GITHUB_OUTPUT}"
+
+      - name: Compute immutable image reference
+        id: image
+        uses: docker/metadata-action@v6
+        env:
+          DOCKER_METADATA_SHORT_SHA_LENGTH: 12
+        with:
+          images: ${{ steps.name.outputs.images }}
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value={{date 'YYYYMMDD-HHmmss'}}-{{sha}}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -125,11 +135,8 @@ jobs:
           file: ${{ inputs.dockerfile }}
           target: ${{ inputs.target }}
           push: true
-          tags: ${{ steps.image.outputs.reference }}
-          labels: |
-            org.opencontainers.image.created=${{ steps.image.outputs.created }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          tags: ${{ steps.image.outputs.tags }}
+          labels: ${{ steps.image.outputs.labels }}
           build-args: ${{ inputs.build-args }}
           provenance: false
           sbom: false
@@ -138,6 +145,11 @@ jobs:
 
       - name: Publish summary
         env:
-          IMAGE_REFERENCE: ${{ steps.image.outputs.reference }}
+          IMAGE_TAGS: ${{ steps.image.outputs.tags }}
         shell: bash
-        run: echo "Published \`${IMAGE_REFERENCE}\`" >> "${GITHUB_STEP_SUMMARY}"
+        run: |
+          set -euo pipefail
+          {
+            echo "Published:"
+            printf '%s\n' "${IMAGE_TAGS}" | sed 's/^/- /'
+          } >> "${GITHUB_STEP_SUMMARY}"
