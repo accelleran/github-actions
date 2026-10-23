@@ -10,9 +10,11 @@ Shared GitHub Actions workflows for Accelleran repositories.
 ghcr.io/accelleran/<package>:YYYYMMDD-HHMMSS-<12-character-commit-sha>
 ```
 
-Callers must trigger it only for tag pushes or pushes to their relevant
-`master` or `main` branch. Pull requests and feature-branch pushes must
-remain build-only.
+Callers must trigger it only for tag pushes, pushes to their relevant
+`master` or `main` branch, or a manual `workflow_dispatch` of `master` or
+`main`. Pull requests and feature-branch pushes must remain build-only.
+A manual run builds and publishes the temporary image, then cleanup can
+delete expired versions. The nightly schedule stays cleanup-only.
 
 `cleanup-core-images.yml` deletes versions whose only tags match that format
 once their GitHub package creation time is more than 30 days old. Call it
